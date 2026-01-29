@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EstadoFactura {
+  CONSULTADO
+  CON_DETALLE
+  REGISTRADO
+  CONTABILIZADO
+}
+
+model Usuario {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  rol       String
+
+  credencialSOL CredencialSOL?
+  facturas      Factura[]
+}
+
+model CredencialSOL {
+  ruc        String  @id
+  usuarioSOL String
+  claveSOL   String
+  estado     String
+
+  usuarioId Int  @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Proveedor {
+  rucProveedor String @id
+  razonSocial  String
+
+  facturas Factura[]
+}
+
+model Factura {
+  idFactura        Int           @id @default(autoincrement())
+  numeroComprobante String       @unique
+  fechaEmision     DateTime
+  total            Decimal
+  estado           EstadoFactura
+
+  usuarioId        Int
+  proveedorRuc     String
+
+  usuario          Usuario   @relation(fields: [usuarioId], references: [id])
+  proveedor        Proveedor @relation(fields: [proveedorRuc], references: [rucProveedor])
+
+  comprobanteElectronico ComprobanteElectronico?
+}
+
+model ComprobanteElectronico {
+  idComprobante   Int      @id @default(autoincrement())
+  xml             String
+  cdr             String
+  fechaRecepcion  DateTime
+  estadoSunat     String
+
+  facturaId Int @unique
+  factura   Factura @relation(fields: [facturaId], references: [idFactura])
+}
+
